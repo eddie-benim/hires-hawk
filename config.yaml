@@ -1,0 +1,3 @@
+llm_provider: openai  # Options: 'openai', 'local'
+local_api_url: "http://localhost:1234/v1/chat/completions"  # LMstudio endpoint
+icd10_api_url: "https://clinicaltables.nlm.nih.gov/api/icd10cm/v3/search"
