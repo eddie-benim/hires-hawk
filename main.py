@@ -16,30 +16,13 @@ if st.button("Analyze Report") and report.strip():
         "List them as a Python list of disease names, no explanations.\n\n"
         f"{report}"
     )
-    import ast, json
+    from llm_output_parser import parse_disease_list
     raw_llm_output = call_llm(prompt)
-    diseases = []
-    try:
-        # Try JSON
-        diseases = json.loads(raw_llm_output)
-        if not isinstance(diseases, list):
-            raise ValueError
-    except Exception:
-        try:
-            # Try Python literal (list)
-            diseases = ast.literal_eval(raw_llm_output)
-            if not isinstance(diseases, list):
-                raise ValueError
-        except Exception:
-            try:
-                # Try comma-separated string
-                diseases = [d.strip() for d in raw_llm_output.split(',') if d.strip()]
-                if len(diseases) < 1:
-                    raise ValueError
-            except Exception:
-                st.error("Failed to parse LLM output. Please check your LLM configuration.")
-                st.info(f"Raw LLM output: {raw_llm_output}")
-                diseases = []
+    diseases = parse_disease_list(raw_llm_output)
+    if not diseases:
+        st.error("Failed to parse LLM output. Please check your LLM configuration.")
+        st.info(f"Raw LLM output: {raw_llm_output}")
+        diseases = []
 
     results = []
     for idx, disease in enumerate(diseases, 1):
