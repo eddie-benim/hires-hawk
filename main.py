@@ -30,19 +30,14 @@ prompt = st.text_area("Prompt", value=default_prompt, height=200)
 
 if st.button("Analyze Report") and report.strip():
     from llm_output_parser import parse_disease_list
+
     if compare_mode:
         raw_llm_output_1 = call_llm(prompt, model=llm_model_1)
         raw_llm_output_2 = call_llm(prompt, model=llm_model_2)
         st.session_state["history"].append(("Compare", prompt, raw_llm_output_1, raw_llm_output_2))
         diseases_1 = parse_disease_list(raw_llm_output_1)
         diseases_2 = parse_disease_list(raw_llm_output_2)
-    else:
-        raw_llm_output_1 = call_llm(prompt, model=llm_model)
-        st.session_state["history"].append(("Single", prompt, raw_llm_output_1))
-        diseases_1 = parse_disease_list(raw_llm_output_1)
-        diseases_2 = None
 
-    if compare_mode:
         col1, col2 = st.columns(2)
         for label, diseases, model, col in [("Primary", diseases_1, llm_model_1, col1), ("Comparison", diseases_2, llm_model_2, col2)]:
             with col:
@@ -62,11 +57,17 @@ if st.button("Analyze Report") and report.strip():
                 )
                 df.index = df.index + 1
                 st.dataframe(df, use_container_width=True)
+
     else:
+        raw_llm_output_1 = call_llm(prompt, model=llm_model)
+        st.session_state["history"].append(("Single", prompt, raw_llm_output_1))
+        diseases_1 = parse_disease_list(raw_llm_output_1)
+
         results = []
         for idx, disease in enumerate(diseases_1, 1):
             code, desc = get_icd10_code(disease, fallback_llm=call_llm)
             results.append((idx, disease, code or "N/A", desc or "N/A"))
+
         col1, col2 = st.columns([2, 1])
         with col1:
             highlighted = report
