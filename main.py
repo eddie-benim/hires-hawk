@@ -7,17 +7,17 @@ st.title("HiRes Hawk: Highlighting Resident Reports")
 
 st.markdown("Paste a radiology report below. The app will extract positive diseases and enumerate them with ICD-10 codes.")
 
+llm_model = st.selectbox("Choose LLM Provider", ["openai", "local"])
 report = st.text_area("Radiology Report", height=300)
 
 if st.button("Analyze Report") and report.strip():
-    # Placeholder LLM prompt for extracting diseases
     prompt = (
         "Extract all positive diseases mentioned in the following radiology report. "
         "List them as a Python list of disease names, no explanations.\n\n"
         f"{report}"
     )
     from llm_output_parser import parse_disease_list
-    raw_llm_output = call_llm(prompt)
+    raw_llm_output = call_llm(prompt, model=llm_model)
     diseases = parse_disease_list(raw_llm_output)
     if not diseases:
         st.error("Failed to parse LLM output. Please check your LLM configuration.")
