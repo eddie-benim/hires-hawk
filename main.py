@@ -12,12 +12,15 @@ st.markdown(f"<div style='background-color:#f0f0f0;padding:10px;border-radius:5p
 
 report = st.text_area("Radiology Report", height=300)
 
+prompt_template = (
+    "Extract all positive diseases mentioned in the following radiology report. "
+    "List them as a Python list of disease names, no explanations.\n\n"
+    "{report}"
+)
+default_prompt = prompt_template.format(report=report)
+prompt = st.text_area("Prompt", value=default_prompt, height=200)
+
 if st.button("Analyze Report") and report.strip():
-    prompt = (
-        "Extract all positive diseases mentioned in the following radiology report. "
-        "List them as a Python list of disease names, no explanations.\n\n"
-        f"{report}"
-    )
     from llm_output_parser import parse_disease_list
     raw_llm_output = call_llm(prompt, model=llm_model)
     diseases = parse_disease_list(raw_llm_output)
