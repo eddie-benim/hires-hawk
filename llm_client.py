@@ -31,7 +31,7 @@ def call_local_llm(prompt):
     return res.json()["choices"][0]["message"]["content"]
 
 def call_llm(prompt, model=None):
-        selected_model = model or config["llm_provider"]
+    selected_model = model or config["llm_provider"]
     if selected_model == "openai":
         return call_openai(prompt)
     else:
