@@ -6,7 +6,6 @@ with open("config.yaml", "r") as f:
 
 def lookup_icd10_api(disease):
     url = config["icd10_api_url"]
-    # Try full disease name
     params = {"terms": disease, "maxList": 1}
     try:
         resp = requests.get(url, params=params, timeout=5)
@@ -14,14 +13,12 @@ def lookup_icd10_api(disease):
         data = resp.json()
         if data and data[0] and data[1]:
             code = data[1][0]
-            # Try to get description from extra fields or display fields if present
             desc = None
             if len(data) > 3 and data[3] and len(data[3]) > 0:
                 desc = data[3][0][0] if isinstance(data[3][0], list) else data[3][0]
             return code, desc
     except Exception as e:
         print(f"ICD-10 API error (full name): {e}")
-    # Try keywords (split disease name)
     for keyword in disease.split():
         params = {"terms": keyword, "maxList": 1}
         try:
@@ -43,7 +40,6 @@ def get_icd10_code(disease, fallback_llm=None):
     if code:
         return code, desc
     if fallback_llm:
-        # Ask LLM for code and description
         prompt = (
             f"What is the ICD-10 code and description for the disease: '{disease}'? "
             "Respond in the format: CODE | Description. If not found, reply: N/A | N/A."
