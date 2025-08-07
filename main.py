@@ -8,6 +8,8 @@ st.title("HiRes Hawk: Highlighting Resident Reports")
 st.markdown("Paste a radiology report below. The app will extract positive diseases and enumerate them with ICD-10 codes.")
 
 llm_model = st.selectbox("Choose LLM Provider", ["openai", "local"])
+st.markdown(f"<div style='background-color:#f0f0f0;padding:10px;border-radius:5px;margin-bottom:10px'><strong>Current LLM Provider:</strong> {llm_model}</div>", unsafe_allow_html=True)
+
 report = st.text_area("Radiology Report", height=300)
 
 if st.button("Analyze Report") and report.strip():
