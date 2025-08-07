@@ -13,7 +13,11 @@ if compare_mode:
     llm_model_2 = st.selectbox("Comparison Model", ["openai", "local"], key="model_2")
 else:
     llm_model = st.selectbox("Choose LLM Provider", ["openai", "local"])
-    st.markdown(f"<div style='background-color:#f0f0f0;padding:10px;border-radius:5px;margin-bottom:10px'><strong>Current LLM Provider:</strong> {llm_model}</div>", unsafe_allow_html=True)
+    st.markdown(
+        f"<div style='background-color:#f0f0f0;padding:10px;border-radius:5px;margin-bottom:10px'>"
+        f"<strong>Current LLM Provider:</strong> {llm_model}</div>",
+        unsafe_allow_html=True
+    )
 
 report = st.text_area("Radiology Report", height=300)
 
@@ -39,12 +43,15 @@ if st.button("Analyze Report") and report.strip():
         diseases_2 = parse_disease_list(raw_llm_output_2)
 
         col1, col2 = st.columns(2)
-        for label, diseases, model, col in [("Primary", diseases_1, llm_model_1, col1), ("Comparison", diseases_2, llm_model_2, col2)]:
+        for label, diseases, model, col in [
+            ("Primary", diseases_1, llm_model_1, col1),
+            ("Comparison", diseases_2, llm_model_2, col2),
+        ]:
             with col:
                 st.markdown(f"### {label} Model: {model}")
                 results = []
                 for idx, disease in enumerate(diseases or [], 1):
-                    code, desc = get_icd10_code(disease, fallback_llm=call_llm)
+                    code, desc = get_icd10_code(disease, fallback_llm=lambda p: call_llm(p, model=model))
                     results.append((idx, disease, code or "N/A", desc or "N/A"))
                 highlighted = report
                 for idx, disease, _, _ in results:
@@ -57,7 +64,6 @@ if st.button("Analyze Report") and report.strip():
                 )
                 df.index = df.index + 1
                 st.dataframe(df, use_container_width=True)
-
     else:
         raw_llm_output_1 = call_llm(prompt, model=llm_model)
         st.session_state["history"].append(("Single", prompt, raw_llm_output_1))
@@ -65,7 +71,7 @@ if st.button("Analyze Report") and report.strip():
 
         results = []
         for idx, disease in enumerate(diseases_1, 1):
-            code, desc = get_icd10_code(disease, fallback_llm=call_llm)
+            code, desc = get_icd10_code(disease, fallback_llm=lambda p: call_llm(p, model=llm_model))
             results.append((idx, disease, code or "N/A", desc or "N/A"))
 
         col1, col2 = st.columns([2, 1])
