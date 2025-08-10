@@ -19,16 +19,25 @@ def call_openai(prompt):
     return response.choices[0].message.content
 
 def call_local_llm(prompt):
-    url = config["local_api_url"]
+    url = os.getenv("LOCAL_LLM_URL") or config.get("local_api_url")
+    if not url:
+        raise RuntimeError("Local LLM URL not configured. Set LOCAL_LLM_URL or config.yaml local_api_url")
     headers = {"Content-Type": "application/json"}
     payload = {
         "model": "local-model",
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.2,
     }
-    res = requests.post(url, json=payload, headers=headers)
-    res.raise_for_status()
-    return res.json()["choices"][0]["message"]["content"]
+    try:
+        res = requests.post(url, json=payload, headers=headers, timeout=30)
+        res.raise_for_status()
+        j = res.json()
+        return j["choices"][0]["message"]["content"]
+    except requests.exceptions.RequestException as e:
+        raise RuntimeError(
+            f"Local LLM unreachable at {url}. If you’re on a hosted environment, "
+            f"'localhost' will not reach your machine. Use a reachable URL."
+        ) from e
 
 def call_llm(prompt, model=None):
     selected_model = (model or config.get("llm_provider", "openai")).lower()
