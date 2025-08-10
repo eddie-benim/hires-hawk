@@ -32,19 +32,36 @@ if st.button("Analyze Report") and report.strip():
     from llm_output_parser import parse_disease_list
 
     if compare_mode:
-        raw_llm_output_1 = call_llm(prompt, model=llm_model_1)
-        raw_llm_output_2 = call_llm(prompt, model=llm_model_2)
+        # Model 1
+        try:
+            raw_llm_output_1 = call_llm(prompt, model=llm_model_1)
+            diseases_1 = parse_disease_list(raw_llm_output_1)
+        except Exception as e:
+            raw_llm_output_1 = f"ERROR: {e}"
+            diseases_1 = []
+
+        # Model 2
+        try:
+            raw_llm_output_2 = call_llm(prompt, model=llm_model_2)
+            diseases_2 = parse_disease_list(raw_llm_output_2)
+        except Exception as e:
+            raw_llm_output_2 = f"ERROR: {e}"
+            diseases_2 = []
+
         st.session_state["history"].append(("Compare", prompt, raw_llm_output_1, raw_llm_output_2))
-        diseases_1 = parse_disease_list(raw_llm_output_1)
-        diseases_2 = parse_disease_list(raw_llm_output_2)
 
         col1, col2 = st.columns(2)
-        for label, diseases, model, col in [("Primary", diseases_1, llm_model_1, col1), ("Comparison", diseases_2, llm_model_2, col2)]:
+        for label, diseases, model, raw_out, col in [
+            ("Primary", diseases_1, llm_model_1, raw_llm_output_1, col1),
+            ("Comparison", diseases_2, llm_model_2, raw_llm_output_2, col2),
+        ]:
             with col:
                 st.markdown(f"### {label} Model: {model}")
+                if isinstance(raw_out, str) and raw_out.startswith("ERROR:"):
+                    st.error(raw_out)
                 results = []
                 for idx, disease in enumerate(diseases or [], 1):
-                    code, desc = get_icd10_code(disease, fallback_llm=call_llm)
+                    code, desc = get_icd10_code(disease, fallback_llm=lambda p: call_llm(p, model=model))
                     if code is not None and desc is not None:
                         results.append((idx, disease, code, desc))
                     else:
@@ -62,13 +79,17 @@ if st.button("Analyze Report") and report.strip():
                 st.dataframe(df, use_container_width=True)
 
     else:
-        raw_llm_output_1 = call_llm(prompt, model=llm_model)
-        st.session_state["history"].append(("Single", prompt, raw_llm_output_1))
-        diseases_1 = parse_disease_list(raw_llm_output_1)
+        try:
+            raw_llm_output_1 = call_llm(prompt, model=llm_model)
+            diseases_1 = parse_disease_list(raw_llm_output_1)
+            st.session_state["history"].append(("Single", prompt, raw_llm_output_1))
+        except Exception as e:
+            st.error(f"ERROR: {e}")
+            diseases_1 = []
 
         results = []
         for idx, disease in enumerate(diseases_1, 1):
-            code, desc = get_icd10_code(disease, fallback_llm=call_llm)
+            code, desc = get_icd10_code(disease, fallback_llm=lambda p: call_llm(p, model=llm_model))
             if code is not None and desc is not None:
                 results.append((idx, disease, code, desc))
             else:
